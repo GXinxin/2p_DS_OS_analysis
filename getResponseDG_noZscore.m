@@ -4,19 +4,20 @@
 clear;
 clc;
 
-fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_responseInfo.txt', ' ');
-% fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_responseInfo_tra2b.txt', ' ');
+% fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_responseInfo.txt', ' ');
+fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_responseInfo_tra2b.txt', ' ');
 data_fd = 'E:\Lab\Data\2p';
-for animal_id = 361 : size(fileInfo, 1)
+for animal_id =  49:size(fileInfo, 1)%[4 5 9 11 12 13 16 25 28 33 34 36 44]
     disp(animal_id)
     disp(fileInfo{animal_id, 1})
     getResponseDG([data_fd, fileInfo{animal_id, 1}], fileInfo{animal_id, 2}, ...
-        fileInfo{animal_id, 3}, fileInfo{animal_id, 4}, animal_id, fileInfo{animal_id, 5}, fileInfo{animal_id, 6});
+        fileInfo{animal_id, 3}, fileInfo{animal_id, 4}, animal_id, fileInfo{animal_id, 5}, fileInfo{animal_id, 6}, ...
+        fileInfo{animal_id, 7}, fileInfo{animal_id, 8});
 end
 
 
 
-function getResponseDG(data_path, matlab_fn, smr_fnm, data_type, animal_id, dataset_id, th)
+function getResponseDG(data_path, matlab_fn, smr_fnm, data_type, animal_id, dataset_id, th, stimlengthType, spike2Type)
 
 % load F movie, matlab file with drift grating order and the corresponding spike2 recording
 cd(data_path)
@@ -32,21 +33,28 @@ end
 
 
 % initialize parameters
-% channels = [1 3]; %th = -0.28; % settings for 333 
-channels = [20 19]; %th = -0.24; % settings for upstair rig
+if spike2Type == 1
+    channels = [1 3]; % th = -0.28; % settings for 333 
+else
+    channels = [20 19]; %th = -0.24; % settings for upstair rig
+end
 th2 = 2; % threshold for galvo
 
-% for 8s stim
-% stimDuration = 16; % 10s grating
-% stimStatic = 8; % 5s static grating
-% afterStaticStim = 8; % 5s static grating after drifting grating
-% totalFrames = 360; % total frames for 15s stim
 
-% for 5s stim
-stimDuration = 10; % 10s grating
-stimStatic = 5; % 5s static grating
-afterStaticStim = 5; % 5s static grating after drifting grating
-totalFrames = 225; % total frames for 15s stim
+if stimlengthType == 2
+    % for 8s stim
+    stimDuration = 16; % 10s grating
+    stimStatic = 8; % 5s static grating
+    afterStaticStim = 8; % 5s static grating after drifting grating
+    totalFrames = 360; % total frames for 15s stim
+else
+    
+    % for 5s stim
+    stimDuration = 10; % 10s grating
+    stimStatic = 5; % 5s static grating
+    afterStaticStim = 5; % 5s static grating after drifting grating
+    totalFrames = 225; % total frames for 15s stim
+end
 
 
 sampleFreq = 25000; % both channels recorded at 25khz
@@ -64,7 +72,7 @@ end
 
 
 % find stimuli onsets and offsets
-isStim = (data_raw{1} < th);
+isStim = (smooth(data_raw{1}, 50) < th);
 stimOn = find (isStim(2:end) - isStim(1:end-1) == 1) + 1;
 diff = stimOn(2:end) - stimOn(1:end-1);
 badId = find(diff < 180000);
@@ -113,6 +121,7 @@ dd = Frame_id(1, 2:end) - Frame_id(1, 1:end-1);
 h = figure; plot(dd);
 title(['animal', num2str(animal_id), '  startFrame', num2str(Frame_id(1, 1))])
 saveas(h, ['E:\Lab\Data\2p\tra2b\summary\testPlot\reorder_animal', num2str(animal_id), '.png'])
+close all
 
 
 
@@ -127,7 +136,7 @@ if data_type == 2
     end
     
     for c = 1 : size(dat.Fcell{dataset_id}, 1)
-        iscell(c) = dat.stat(c).iscell;
+        is_cell(c) = dat.stat(c).iscell;
         neuropilCoeff(c) = dat.stat(c).neuropilCoefficient;
     end
     F_subtracted = dat.Fcell{dataset_id} - repmat(neuropilCoeff', 1, size(dat.Fcell{dataset_id}, 2)) .* dat.FcellNeu{dataset_id}; % Fcell is the raw trace of the cell, skewness (neuropil subtracted F) was computed with 0.7 coefficient in suite2p
@@ -135,8 +144,8 @@ if data_type == 2
     cell_num = length(dat.stat);
     
     add_iscell = sum(F_subtracted) > 0;
-    iscell = iscell .* add_iscell;
-    F_subtracted = F_subtracted(:, iscell > 0);
+%     iscell = iscell .* add_iscell;
+    F_subtracted = F_subtracted(:, is_cell > 0);
 end
 no_cell = size(F_subtracted, 2);
 
@@ -173,40 +182,40 @@ for angle = 1 : 8
 end
 max_dFF = max(dF);
 mkdir(['acq', num2str(dataset_id-1)])
-save(['acq', num2str(dataset_id-1), '\responseTrace_noZscore.mat'], 'responseTrace', 'angles_id', 'Frame_id', 'max_dFF', 'dF')
+save(['acq', num2str(dataset_id-1), '\responseTrace_noZscore.mat'], 'responseTrace', 'angles_id', 'Frame_id', 'max_dFF', 'dF', 'add_iscell', 'is_cell')
 
 
-% %%
-% % no_cell
-% for c = 1 : no_cell
-%     h = figure;
-%     set(h, 'position', [0 0 1200 400], 'visible', 'off')
-%     p = 1;
-%     for angle = 1 : 8
-%         subplot(2, 4, angle)
-%         for i = 1 : size(responseTrace{angle}, 3)
-%             if ~isempty(responseTrace{angle} * 100)
-%                 plot(responseTrace{angle}(:, c, i) * 100);
-%             end
-%             hold on;
-%         end
-%         if ~isempty(responseTrace{angle} * 100)
-%             plot(mean(responseTrace{angle}(:, c, :) * 100, 3), 'lineWidth', 1.5,...
-%                 'color', 'k');
-%             line([16 16+stimStatic*15-1], [0 0], 'color', 'b', 'lineWidth', 2.5)
-%             line([16+stimStatic*15 16+stimDuration*15-1], [0 0], 'color', 'r', 'lineWidth', 2.5)
-%             if afterStaticStim > 0
-%                 line([16+stimDuration*15 16+(stimDuration+afterStaticStim) * 15-1], [0 0], 'color', 'b', 'lineWidth', 2.5)
-%             end
-%             ylim([-.5, max(dF(:, c)) * 100])
-%             set(gca, 'Xticklabel', []); box off; %axis off
-%         end
-%         p = p + 1;
-%     end
-%     saveas(h, ['acq', num2str(dataset_id-1), '\cell', num2str(c), '.png'])
-%     
-% end
-% close all
+%%
+% no_cell
+for c = 1 : no_cell
+    h = figure;
+    set(h, 'position', [0 0 1200 400], 'visible', 'off')
+    p = 1;
+    for angle = 1 : 8
+        subplot(2, 4, angle)
+        for i = 1 : size(responseTrace{angle}, 3)
+            if ~isempty(responseTrace{angle} * 100)
+                plot(responseTrace{angle}(:, c, i) * 100);
+            end
+            hold on;
+        end
+        if ~isempty(responseTrace{angle} * 100)
+            plot(mean(responseTrace{angle}(:, c, :) * 100, 3), 'lineWidth', 1.5,...
+                'color', 'k');
+            line([16 16+stimStatic*15-1], [0 0], 'color', 'b', 'lineWidth', 2.5)
+            line([16+stimStatic*15 16+stimDuration*15-1], [0 0], 'color', 'r', 'lineWidth', 2.5)
+            if afterStaticStim > 0
+                line([16+stimDuration*15 16+(stimDuration+afterStaticStim) * 15-1], [0 0], 'color', 'b', 'lineWidth', 2.5)
+            end
+            ylim([-.5, max(dF(:, c)) * 100])
+            set(gca, 'Xticklabel', []); box off; %axis off
+        end
+        p = p + 1;
+    end
+    saveas(h, ['acq', num2str(dataset_id-1), '\cell', num2str(c), '.png'])
+    
+end
+close all
 end
 
 

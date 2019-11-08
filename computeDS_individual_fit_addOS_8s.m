@@ -6,7 +6,7 @@
 clear; clc;
 tag = 'all';
 
-fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_summaryEachFOVInfo.txt', ' ');
+fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_summaryEachFOVInfo_8s.txt', ' ');
 for f = 1 : size(fileInfo, 1)
     compute_individual_DS(fileInfo{f, 1}, fileInfo{f, 2}, fileInfo{f, 3}, fileInfo{f, 4});
 end
@@ -17,32 +17,16 @@ function compute_individual_DS(data_path, data_group, data_tag, rightEye)
 
 disp(data_path(22:end))
 switch data_group
-    case 1
-        save_path = ['E:\Lab\Data\2p\summaryData\newSummary_050719\saline', data_path(22:end)]; % saline folders
-    case 2
-        save_path = ['E:\Lab\Data\2p\summaryData\newSummary_050719\gabazine', data_path(29:end)]; % gabazine folders
-    case 3
-        save_path = ['E:\Lab\Data\2p\summaryData\newSummary_050719\glutamate', data_path(25:end)]; % glutamate folders
-    case 4
-        save_path = ['E:\Lab\Data\2p\summaryData\newSummary_050719\non_injected', data_path(28:end)]; % non_injectede folders
-    case 5
-        save_path = ['E:\Lab\Data\2p\FRMD7\summary\exp', data_path(21:end)]; % FRMD7 experimental
-    case 6
-        save_path = ['E:\Lab\Data\2p\FRMD7\summary\ctrl', data_path(26:end)]; % FRMD7 littermate control
     case 7
         save_path = ['E:\Lab\Data\2p\tra2b\v1\summary', data_path(26:end)]; % h2b inj in V1
-    case 8
-        save_path = ['E:\Lab\Data\2p\summaryData\p21\saline', data_path(26:end)]; % p21 saline
-    case 9
-        save_path = ['E:\Lab\Data\2p\summaryData\p21\gabazine', data_path(31:end)]; % p21 gabazine
-    case 10
-        save_path = ['E:\Lab\Data\2p\summaryData\p21\glutamate', data_path(29:end)]; % p21 glutamate
-    case 11
-        save_path = ['E:\Lab\Data\2p\summaryData\p21\non_injected', data_path(30:end)]; % p21 non injected
-    case 12
-        save_path = ['E:\Lab\Data\2p\FRMD7\P22\summary\exp', data_path(30:end)]; % p21 FRMD7
-    case 13
-        save_path = ['E:\Lab\Data\2p\FRMD7\P22\summary\ctrl', data_path(30:end)]; % p21 FRMD7 control
+    case 14
+        save_path = ['E:\Lab\Data\2p\tra2b\summary\gabazine', data_path(30:end)]; % tra2b p15 gabazine
+    case 15
+        save_path = ['E:\Lab\Data\2p\tra2b\summary\saline', data_path(30:end)]; % tra2b p15 gabazine
+    case 16
+        save_path = ['E:\Lab\Data\2p\tra2b\summary\p21\gabazine', data_path(30:end)]; % tra2b p15 gabazine
+    case 17
+        save_path = ['E:\Lab\Data\2p\tra2b\summary\p21\saline', data_path(30:end)]; % tra2b p15 gabazine
 end
 
 
@@ -59,19 +43,19 @@ cd(data_path)
 
 
 % trial info, detection window
-stimDuration = 10; % 10s grating
-stimStatic = 5; % 5s static grating
-afterStaticStim = 5; % 5s static grating after drifting grating
+stimDuration = 16; % 10s grating
+stimStatic = 8; % 5s static grating
+afterStaticStim = 8; % 5s static grating after drifting grating
 
-detectWd = 5; % use the first 3s to detect drift grating response
+detectWd = 10; % use the first 3s to detect drift grating response
 sampleFreq = 15;
 
 timeStep(1) = 16; % trace start 15 frames before onset of each trial
 timeStep(2) = timeStep(1) + stimStatic * sampleFreq; % offset of static gratings
-timeStep(3) = timeStep(2) + detectWd * sampleFreq; % offset of drifting gratings detection window, equal to timeStep(4) if using 5s
-timeStep(4) = timeStep(3) + (stimDuration - stimStatic) * sampleFreq; % offset of drift gratings
-timeStep(5) = timeStep(4) + afterStaticStim * sampleFreq; % end of the trial
-
+timeStep(3) = timeStep(2) + detectWd * sampleFreq; % offset of drifting gratings
+% try 2 + timeStep(3) in 8s condition due to the slow dynamics of H2b
+timeStep(4) = timeStep(2) + stimDuration * sampleFreq; % offset of drift gratings
+% timeStep(5) = timeStep(4) + (afterStaticStim-2) * sampleFreq; % end of the trial
 
 
 % load data from each subfolder
