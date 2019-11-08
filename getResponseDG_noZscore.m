@@ -7,7 +7,7 @@ clc;
 % fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_responseInfo.txt', ' ');
 fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_responseInfo_tra2b.txt', ' ');
 data_fd = 'E:\Lab\Data\2p';
-for animal_id =  49:size(fileInfo, 1)%[4 5 9 11 12 13 16 25 28 33 34 36 44]
+for animal_id =  21:size(fileInfo, 1)%[4 5 9 11 12 13 16 25 28 33 34 36 44]
     disp(animal_id)
     disp(fileInfo{animal_id, 1})
     getResponseDG([data_fd, fileInfo{animal_id, 1}], fileInfo{animal_id, 2}, ...
@@ -34,7 +34,7 @@ end
 
 % initialize parameters
 if spike2Type == 1
-    channels = [1 3]; % th = -0.28; % settings for 333 
+    channels = [1 3]; % th = -0.28; % settings for 333
 else
     channels = [20 19]; %th = -0.24; % settings for upstair rig
 end
@@ -128,7 +128,7 @@ close all
 % additional neuropil subtraction steps if data was processed with suite2p
 if data_type == 2
     % correct intensity values for 2 glutamate animal that were
-    % preprocessed initially, value was computed outside this script   
+    % preprocessed initially, value was computed outside this script
     min_value = [-70, -64, -67, -68, -70, -70, -73];
     if animal_id >= 40 && animal_id <= 46
         dat.Fcell{dataset_id} = dat.Fcell{dataset_id} - min_value(animal_id-39);
@@ -144,78 +144,112 @@ if data_type == 2
     cell_num = length(dat.stat);
     
     add_iscell = sum(F_subtracted) > 0;
-%     iscell = iscell .* add_iscell;
+    %     iscell = iscell .* add_iscell;
     F_subtracted = F_subtracted(:, is_cell > 0);
 end
 no_cell = size(F_subtracted, 2);
 
 
+% low pass filter
+fc = 1; % Cut off frequency
+fs = 15; % Sampling rate
+[b,a] = butter(3, fc/(fs/2)); % Butterworth filter of order 3
+padding = 50;
+
+if stimlengthType == 2
+    for cc = 1 : no_cell
+        F_subtracted_filter(:, cc) = filter(b, a, [F_subtracted(padding:-1:1, cc); F_subtracted(:, cc)]); % Will be the filtered signal
+    end
+end
+F_subtracted_filter = F_subtracted_filter(padding+1 : end, :);
+
 
 % compute df from F_subtracted, corrected version since 1/15/19
-hat = 500;
-se = strel('line', hat, 0);
-tmp = F_subtracted;
-for c = 1 : no_cell
-    F_subtracted(:, c) = imtophat(F_subtracted(:, c)', se)'; % remove slow baseline fluctuation
-    baseline = tmp(:, c) - F_subtracted(:, c);
-    F_subtracted(:, c) = F_subtracted(:, c) + mean(baseline);
-end
-
-frameNum = size(F_subtracted, 1);
-f_tmp = sort(F_subtracted, 1);
-f_min = f_tmp(ceil(frameNum*0.1), :); % compute dF/F, where F is the 10th percentile of the whole F trace
-dF = F_subtracted ./ repmat(f_min, size(F_subtracted, 1), 1) - 1;
-
-
-
-% summarize into individual angles
-responseTrace = cell(1, 8);
-for angle = 1 : 8
-    id = find(angles_id == angle);
-    responseTrace{angle} = [];
-    for j = id
-        if j <= size(Frame_id, 2) && Frame_id(1, j) + totalFrames < frameNum && Frame_id(1, j) > 15
-            responseTrace{angle} = cat(3, responseTrace{angle}, ...
-                dF(Frame_id(1, j) - 15 : Frame_id(1, j) + totalFrames, :));
-        end
+for m = 1 : 2
+    if m == 2
+        F_subtracted = F_subtracted_filter;
     end
-end
-max_dFF = max(dF);
-mkdir(['acq', num2str(dataset_id-1)])
-save(['acq', num2str(dataset_id-1), '\responseTrace_noZscore.mat'], 'responseTrace', 'angles_id', 'Frame_id', 'max_dFF', 'dF', 'add_iscell', 'is_cell')
-
-
-%%
-% no_cell
-for c = 1 : no_cell
-    h = figure;
-    set(h, 'position', [0 0 1200 400], 'visible', 'off')
-    p = 1;
+    hat = 500;
+    se = strel('line', hat, 0);
+    tmp = F_subtracted;
+    for c = 1 : no_cell
+        F_subtracted(:, c) = imtophat(F_subtracted(:, c)', se)'; % remove slow baseline fluctuation
+        baseline = tmp(:, c) - F_subtracted(:, c);
+        F_subtracted(:, c) = F_subtracted(:, c) + mean(baseline);
+    end
+    
+    frameNum = size(F_subtracted, 1);
+    f_tmp = sort(F_subtracted, 1);
+    f_min = f_tmp(ceil(frameNum*0.1), :); % compute dF/F, where F is the 10th percentile of the whole F trace
+    dF = F_subtracted ./ repmat(f_min, size(F_subtracted, 1), 1) - 1;
+    
+    
+    
+    % summarize into individual angles
+    responseTrace = cell(1, 8);
     for angle = 1 : 8
-        subplot(2, 4, angle)
-        for i = 1 : size(responseTrace{angle}, 3)
-            if ~isempty(responseTrace{angle} * 100)
-                plot(responseTrace{angle}(:, c, i) * 100);
+        id = find(angles_id == angle);
+        responseTrace{angle} = [];
+        for j = id
+            if j <= size(Frame_id, 2) && Frame_id(1, j) + totalFrames < frameNum && Frame_id(1, j) > 15
+                responseTrace{angle} = cat(3, responseTrace{angle}, ...
+                    dF(Frame_id(1, j) - 15 : Frame_id(1, j) + totalFrames, :));
             end
-            hold on;
         end
-        if ~isempty(responseTrace{angle} * 100)
-            plot(mean(responseTrace{angle}(:, c, :) * 100, 3), 'lineWidth', 1.5,...
-                'color', 'k');
-            line([16 16+stimStatic*15-1], [0 0], 'color', 'b', 'lineWidth', 2.5)
-            line([16+stimStatic*15 16+stimDuration*15-1], [0 0], 'color', 'r', 'lineWidth', 2.5)
-            if afterStaticStim > 0
-                line([16+stimDuration*15 16+(stimDuration+afterStaticStim) * 15-1], [0 0], 'color', 'b', 'lineWidth', 2.5)
-            end
-            ylim([-.5, max(dF(:, c)) * 100])
-            set(gca, 'Xticklabel', []); box off; %axis off
-        end
-        p = p + 1;
     end
-    saveas(h, ['acq', num2str(dataset_id-1), '\cell', num2str(c), '.png'])
+    max_dFF = max(dF);
+    mkdir(['acq', num2str(dataset_id-1)])
+    if m == 1
+        save(['acq', num2str(dataset_id-1), '\responseTrace_noZscore.mat'], 'responseTrace', 'angles_id', 'Frame_id', 'max_dFF', 'dF', 'add_iscell', 'is_cell')
+    else
+        save(['acq', num2str(dataset_id-1), '\responseTrace_noZscore_filtered.mat'], 'responseTrace', 'angles_id', 'Frame_id', 'max_dFF', 'dF', 'add_iscell', 'is_cell')
+    end
+    
+    
+    
+    %%
+    % no_cell
+    if m == 2
+    for c = 1 : no_cell
+        h = figure;
+        set(h, 'position', [0 0 1200 400], 'visible', 'off')
+        p = 1;
+        for angle = 1 : 8
+            subplot(2, 4, angle)
+            for i = 1 : size(responseTrace{angle}, 3)
+                if ~isempty(responseTrace{angle} * 100)
+                    plot(responseTrace{angle}(:, c, i) * 100);
+                end
+                hold on;
+            end
+            if ~isempty(responseTrace{angle} * 100)
+                plot(mean(responseTrace{angle}(:, c, :) * 100, 3), 'lineWidth', 1.5,...
+                    'color', 'k');
+                line([16 16+stimStatic*15-1], [0 0], 'color', 'b', 'lineWidth', 2.5)
+                line([16+stimStatic*15 16+stimDuration*15-1], [0 0], 'color', 'r', 'lineWidth', 2.5)
+                if afterStaticStim > 0
+                    line([16+stimDuration*15 16+(stimDuration+afterStaticStim) * 15-1], [0 0], 'color', 'b', 'lineWidth', 2.5)
+                end
+                ylim([-.5, max(dF(:, c)) * 100])
+                set(gca, 'Xticklabel', []); box off; %axis off
+            end
+            p = p + 1;
+        end
+        if m == 1
+            saveas(h, ['acq', num2str(dataset_id-1), '\cell', num2str(c), '.png'])
+        else
+            saveas(h, ['acq', num2str(dataset_id-1), '\filtered_cell', num2str(c), '.png'])
+        end
+        
+    end
+    close all
+    
+    end
+    
+    
     
 end
-close all
-end
 
+
+end
 
