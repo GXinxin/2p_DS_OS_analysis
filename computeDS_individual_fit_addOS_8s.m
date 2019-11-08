@@ -10,13 +10,13 @@ tag = 'all';
 fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_summaryEachFOVInfo_8s.txt', ' ');
 is_filter = 1;
 
-for f = 3 : size(fileInfo, 1)
-    compute_individual_DS(fileInfo{f, 1}, fileInfo{f, 2}, fileInfo{f, 3}, fileInfo{f, 4});
+for f = 7 : size(fileInfo, 1)
+    compute_individual_DS(fileInfo{f, 1}, fileInfo{f, 2}, fileInfo{f, 3}, fileInfo{f, 4}, is_filter);
 end
 
 
 % compute DSI, OSI, tuning width, etc...
-function compute_individual_DS(data_path, data_group, data_tag, rightEye)
+function compute_individual_DS(data_path, data_group, data_tag, rightEye, is_filter)
 
 disp(data_path(22:end))
 switch data_group
