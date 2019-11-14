@@ -6,10 +6,13 @@
 clear; clc;
 tag = 'all';
 
-fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_summaryEachFOVInfo.txt', ' ');
+% fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_summaryEachFOVInfo.txt', ' ');
+fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_summaryEachFOVInfo_FRMD7_P15.txt', ' ');
+% fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_summaryEachFOVInfo_SLC_P21.txt', ' ');
+% fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_summaryEachFOVInfo_FRMD7_P21.txt', ' ');
 is_filter = 0;
 
-for f = 1 : size(fileInfo, 1)
+for f = 12 : size(fileInfo, 1)
     compute_individual_DS(fileInfo{f, 1}, fileInfo{f, 2}, fileInfo{f, 3}, fileInfo{f, 4}, is_filter);
 end
 
@@ -87,7 +90,7 @@ if length(a_list) >= 1
             is_respond0 excludeActiveCell is_respond respMatrix maxDS maxOS excludeActivation maxFrame is_selective anova_p...
             fit_rsquare fit_error iscell active_id
         cd([data_path, a_list(a_id).name])
-        save_tag = ['tra2b_', num2str(detectWd), 's_zscore_'];
+        save_tag = ['cortex_', num2str(detectWd), 's_zscore_'];
         save_folder = [save_path, a_list(a_id).name, '\'];
         mkdir(save_folder)
         

@@ -10,7 +10,7 @@ tag = 'all';
 fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_summaryEachFOVInfo_8s.txt', ' ');
 is_filter = 1;
 
-for f = 7 : size(fileInfo, 1)
+for f = 10 : size(fileInfo, 1)
     compute_individual_DS(fileInfo{f, 1}, fileInfo{f, 2}, fileInfo{f, 3}, fileInfo{f, 4}, is_filter);
 end
 
@@ -342,12 +342,12 @@ if length(a_list) >= 1
             save([save_folder, 'filtered_DSI_summary_window', num2str(detectWd), '.mat'], 'directionId', 'orientationId', 'DS_direction', 'anova_p', ...
                 'median_values', 'DSI', 'OSI', 'DSI_fit', 'OSI_fit', 'DS_id', 'DS_percent', 'DS_direction', 'OS_id', 'OS_percent', 'OS_direction', 'fit_DS_id', 'fit_DS_percent', 'fit_DS_direction', ...
                 'fit_OS_id', 'fit_OS_percent', 'fit_OS_direction', 'DSI_global', 'OSI_global', 'percent_inactive', 'DSI_fit', 'OSI_fit', 'is_respond', 'id1', 'id2',...
-                'is_fit', 'is_selective', 'time2peak', 'time2slope', 'respMatrix', 'respMatrix_axis', 'tuning', 'fitCoeff', 'gof', 'fit_results')
+                'is_fit', 'is_selective', 'time2peak', 'time2slope', 'respMatrix', 'respMatrix_axis', 'tuning', 'fitCoeff', 'gof', 'fit_results', 'resp_Percent')
         else
             save([save_folder, 'DSI_summary_window', num2str(detectWd), '.mat'], 'directionId', 'orientationId', 'DS_direction', 'anova_p', ...
             'median_values', 'DSI', 'OSI', 'DSI_fit', 'OSI_fit', 'DS_id', 'DS_percent', 'DS_direction', 'OS_id', 'OS_percent', 'OS_direction', 'fit_DS_id', 'fit_DS_percent', 'fit_DS_direction', ...
             'fit_OS_id', 'fit_OS_percent', 'fit_OS_direction', 'DSI_global', 'OSI_global', 'percent_inactive', 'DSI_fit', 'OSI_fit', 'is_respond', 'id1', 'id2',...
-            'is_fit', 'is_selective', 'time2peak', 'time2slope', 'respMatrix', 'respMatrix_axis', 'tuning', 'fitCoeff', 'gof', 'fit_results')
+            'is_fit', 'is_selective', 'time2peak', 'time2slope', 'respMatrix', 'respMatrix_axis', 'tuning', 'fitCoeff', 'gof', 'fit_results', 'resp_Percent')
         end
         
         
