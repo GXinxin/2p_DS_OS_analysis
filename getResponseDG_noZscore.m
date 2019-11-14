@@ -4,10 +4,10 @@
 clear;
 clc;
 
-% fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_responseInfo.txt', ' ');
-fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_responseInfo_tra2b.txt', ' ');
+fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_responseInfo.txt', ' ');
+% fileInfo = readtext('E:\Lab\Data\2p\analysisInputs\DG_responseInfo_tra2b.txt', ' ');
 data_fd = 'E:\Lab\Data\2p';
-for animal_id =  21:size(fileInfo, 1)%[4 5 9 11 12 13 16 25 28 33 34 36 44]
+for animal_id = 397:399 %[1:20, 22:24, 27:104, 107:229, 263:307, 335:361, 363:377] [4 5 9 11 12 13 16 25 28 33 34 36 44]
     disp(animal_id)
     disp(fileInfo{animal_id, 1})
     getResponseDG([data_fd, fileInfo{animal_id, 1}], fileInfo{animal_id, 2}, ...
@@ -48,7 +48,6 @@ if stimlengthType == 2
     afterStaticStim = 8; % 5s static grating after drifting grating
     totalFrames = 360; % total frames for 15s stim
 else
-    
     % for 5s stim
     stimDuration = 10; % 10s grating
     stimStatic = 5; % 5s static grating
@@ -143,11 +142,16 @@ if data_type == 2
     F_subtracted = F_subtracted';
     cell_num = length(dat.stat);
     
-    add_iscell = sum(F_subtracted) > 0;
     %     iscell = iscell .* add_iscell;
+    add_iscell = sum(F_subtracted) > 0;
     F_subtracted = F_subtracted(:, is_cell > 0);
 end
 no_cell = size(F_subtracted, 2);
+
+if data_type == 1
+    is_cell = ones(1, size(F_subtracted, 2));
+    add_iscell = sum(F_subtracted) > 0;
+end
 
 
 % low pass filter
@@ -160,12 +164,13 @@ if stimlengthType == 2
     for cc = 1 : no_cell
         F_subtracted_filter(:, cc) = filter(b, a, [F_subtracted(padding:-1:1, cc); F_subtracted(:, cc)]); % Will be the filtered signal
     end
+    F_subtracted_filter = F_subtracted_filter(padding+1 : end, :);
 end
-F_subtracted_filter = F_subtracted_filter(padding+1 : end, :);
+
 
 
 % compute df from F_subtracted, corrected version since 1/15/19
-for m = 1 : 2
+for m = 1 : stimlengthType
     if m == 2
         F_subtracted = F_subtracted_filter;
     end
@@ -209,7 +214,7 @@ for m = 1 : 2
     
     %%
     % no_cell
-    if m == 2
+    %     if m == 2
     for c = 1 : no_cell
         h = figure;
         set(h, 'position', [0 0 1200 400], 'visible', 'off')
@@ -230,7 +235,7 @@ for m = 1 : 2
                 if afterStaticStim > 0
                     line([16+stimDuration*15 16+(stimDuration+afterStaticStim) * 15-1], [0 0], 'color', 'b', 'lineWidth', 2.5)
                 end
-                ylim([-.5, max(dF(:, c)) * 100])
+%                 ylim([-.5, max(dF(:, c)) * 100])
                 set(gca, 'Xticklabel', []); box off; %axis off
             end
             p = p + 1;
@@ -244,12 +249,13 @@ for m = 1 : 2
     end
     close all
     
-    end
+    %     end
     
     
     
 end
 
 
-end
 
+
+end
